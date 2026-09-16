@@ -100,9 +100,11 @@ export function donut(fatias, opcoes = {}) {
 
   const legenda = el('div', { class: 'legend' });
   fatias.forEach((f, i) => {
+    const fracao = total ? Math.abs(f.valor) / total * 100 : 0;
     legenda.append(el('div', { class: 'legend-row' },
       el('span', { class: 'bul', style: `background:${corSerie(i)}` }),
       el('span', { class: 'nm', text: f.rotulo, title: f.rotulo }),
+      opcoes.percentual === false ? null : el('span', { class: 'pc', text: fracao.toFixed(1).replace('.', ',') + '%' }),
       el('span', { class: 'vl', text: moeda(f.valor) })
     ));
   });
@@ -227,4 +229,64 @@ export function barrasHorizontais(dados, opcoes = {}) {
   return wrap;
 }
 
-export default { barras, barrasAgrupadas, barrasHorizontais, donut, sparkline, corSerie, CORES_SERIE };
+/* ------------------------------------------------------------
+   Linhas — evolução mensal de um ou mais indicadores, com eixo e valores
+   ------------------------------------------------------------ */
+
+/**
+ * @param {string[]} rotulos  um por ponto (mês)
+ * @param {Array} series      [{ nome, cor, valores: number[] }]
+ * @param {object} opcoes     { formato, altura, zeroNaBase }
+ */
+export function linhas(rotulos, series, opcoes = {}) {
+  const fmt = opcoes.formato || moeda;
+  const W = 640, H = opcoes.altura || 220, PAD = { t: 26, r: 18, b: 30, l: 14 };
+  const todos = series.flatMap(s => s.valores.map(v => Number(v) || 0));
+  let min = Math.min(0, ...todos), max = Math.max(0, ...todos);
+  if (opcoes.zeroNaBase === false) { min = Math.min(...todos); max = Math.max(...todos); }
+  if (max === min) { max = min + 1; }
+  const folga = (max - min) * 0.08; max += folga; if (min < 0) min -= folga;
+  const n = rotulos.length;
+  const x = i => n > 1 ? PAD.l + (i / (n - 1)) * (W - PAD.l - PAD.r) : W / 2;
+  const y = v => PAD.t + (1 - (v - min) / (max - min)) * (H - PAD.t - PAD.b);
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart-lines'); svg.setAttribute('role', 'img');
+  const mk = (tag, attrs, txt) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (txt != null) e.textContent = txt; return e; };
+
+  // linhas-guia: zero e mais três níveis
+  for (let k = 0; k <= 3; k++) {
+    const v = min + (max - min) * k / 3;
+    svg.append(mk('line', { x1: PAD.l, x2: W - PAD.r, y1: y(v), y2: y(v), class: 'guia' }));
+  }
+  if (min < 0 && max > 0) svg.append(mk('line', { x1: PAD.l, x2: W - PAD.r, y1: y(0), y2: y(0), class: 'zero' }));
+
+  series.forEach((s, si) => {
+    const pts = s.valores.map((v, i) => [x(i), y(Number(v) || 0)]);
+    if (pts.length > 1) {
+      svg.append(mk('polyline', { points: pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: s.cor, 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    }
+    pts.forEach(([px, py], i) => {
+      const g = mk('g', { class: 'ponto' });
+      g.append(mk('circle', { cx: px, cy: py, r: 4.5, fill: s.cor, stroke: 'var(--bg-card)', 'stroke-width': 2 }));
+      // valor escrito só quando há uma série (senão vira poluição) — as
+      // demais ficam no title (tooltip)
+      if (series.length === 1 && n <= 13) {
+        g.append(mk('text', { x: px, y: py - 10, 'text-anchor': i === 0 ? 'start' : (i === n - 1 ? 'end' : 'middle'), class: 'valor' }, fmt(s.valores[i] || 0)));
+      }
+      g.append(mk('title', {}, `${rotulos[i]} · ${s.nome}: ${fmt(s.valores[i] || 0)}`));
+      svg.append(g);
+    });
+    void si;
+  });
+  rotulos.forEach((r, i) => svg.append(mk('text', { x: x(i), y: H - 8, 'text-anchor': i === 0 ? 'start' : (i === n - 1 ? 'end' : 'middle'), class: 'eixo' }, r)));
+
+  const wrap = el('div', { class: 'chart-lines-wrap' });
+  if (series.length > 1) {
+    wrap.append(el('div', { class: 'chart-legend' }, ...series.map(s => el('span', { class: 'chart-legend-item' }, el('span', { class: 'bul', style: `background:${s.cor}` }), s.nome))));
+  }
+  wrap.append(svg);
+  return wrap;
+}
+
+export default { barras, barrasAgrupadas, barrasHorizontais, donut, sparkline, linhas, corSerie, CORES_SERIE };

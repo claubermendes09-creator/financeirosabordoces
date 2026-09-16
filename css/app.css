@@ -246,7 +246,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 1px solid transparent;
 }
 .delta.up   { background: rgba(52,211,153,.14); color: var(--pos); border-color: rgba(52,211,153,.3); }
-.delta.down { background: rgba(139,124,246,.16); color: var(--c1); border-color: rgba(139,124,246,.32); }
+.delta.down { background: rgba(251,113,133,.14); color: var(--neg); border-color: rgba(251,113,133,.32); }
 .delta.flat { background: var(--scrim); color: var(--text-faint); border-color: var(--border); }
 
 /* ---- Cartão glass (resumo do mês) ---- */
@@ -777,3 +777,40 @@ th.th-ord.ord-desc::after { border-top: 5px solid var(--accent); opacity: 1; }
   .page-head .pills { gap: 6px; }
   .pill { padding: 6px 12px; font-size: 12.5px; }
 }
+
+/* ---- Menu lateral: passa o mouse, ele abre e mostra os nomes ---- */
+@media (min-width: 901px) {
+  .shell { position: relative; }
+  /* o conteúdo fica preso à 2ª coluna: quando o rail vira overlay e sai do
+     grid, o main não pode escorregar para a coluna estreita dele */
+  .main { grid-column: 2; }
+  .rail { width: var(--sidebar-w); transition: width .18s ease, box-shadow .18s; }
+  .rail:hover, .rail:focus-within {
+    position: absolute; top: 0; bottom: 0; left: 0; z-index: 90;
+    width: 236px; align-items: stretch; padding-left: 12px; padding-right: 12px;
+    box-shadow: 12px 0 32px rgba(0,0,0,.28);
+    border-top-left-radius: inherit; border-bottom-left-radius: inherit;
+  }
+  .rail:hover .rail-logo, .rail:focus-within .rail-logo { margin-left: 2px; }
+  .rail:hover .rail-btn, .rail:focus-within .rail-btn {
+    width: 100%; display: flex; align-items: center; justify-content: flex-start;
+    gap: 12px; padding: 0 12px; border-radius: 12px;
+  }
+  .rail:hover .rail-btn .tip, .rail:focus-within .rail-btn .tip {
+    position: static; opacity: 1; transform: none; pointer-events: none;
+    background: none; border: none; box-shadow: none; padding: 0;
+    font-size: 13px; font-weight: 600; color: inherit;
+  }
+  .rail:hover .rail-sep, .rail:focus-within .rail-sep { width: 100%; }
+}
+.legend-row .pc { font-size: 11.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+
+/* ---- gráfico de linhas (evolução mensal) ---- */
+.chart-lines-wrap { display: flex; flex-direction: column; gap: 8px; }
+.chart-lines { width: 100%; height: auto; display: block; overflow: visible; }
+.chart-lines .guia { stroke: var(--border); stroke-width: 1; }
+.chart-lines .zero { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 4 4; }
+.chart-lines .eixo { fill: var(--text-faint); font-size: 11px; }
+.chart-lines .valor { fill: var(--text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart-lines .ponto:hover circle { r: 6; }
+.aba-dash { display: flex; gap: 8px; margin-top: 16px; }

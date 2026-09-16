@@ -13,7 +13,7 @@ import estado from '../estado.js';
 import { calcularVarias, variacao, SENTIDO_BOM, GRUPOS_DESPESA_FIXA } from '../dre.js';
 import { el, moeda, dataBR, competenciaCurta, competenciaLonga, competenciaAnterior, competenciaHoje, truncar } from '../util.js';
 import { cardKPI, card, selectSimples, icone } from '../ui/componentes.js';
-import { barrasAgrupadas, barrasHorizontais, donut, sparkline } from '../ui/grafico.js';
+import { barrasAgrupadas, barrasHorizontais, donut, linhas } from '../ui/grafico.js';
 import { tabela } from '../ui/tabela.js';
 
 export const titulo = 'Dashboard';
@@ -36,8 +36,22 @@ export async function render(ctx) {
   const pctReceita = v => rt ? (v / rt * 100).toFixed(1) + '%' : '—';
 
   const raiz = document.createDocumentFragment();
+  const aba = ctx.params.aba === 'evolucao' ? 'evolucao' : 'mes';
 
-  /* ---- cabeçalho ---- */
+  /* ---- cabeçalho: duas abas ---- */
+  const abas = el('div', { class: 'pills aba-dash', role: 'tablist' },
+    el('button', { class: 'pill', type: 'button', role: 'tab', 'aria-pressed': String(aba === 'mes'), onclick: () => ctx.irPara('#/dashboard?mes=' + comp) }, 'Visão do mês'),
+    el('button', { class: 'pill', type: 'button', role: 'tab', 'aria-pressed': String(aba === 'evolucao'), onclick: () => ctx.irPara('#/dashboard?aba=evolucao') }, 'Evolução mensal'));
+
+  if (aba === 'evolucao') {
+    raiz.append(el('div', { class: 'page-head' },
+      el('h1', { class: 'page-title', text: 'Dashboard' }),
+      el('div', { class: 'page-desc', text: 'Como os indicadores andaram mês a mês' }),
+      abas));
+    raiz.append(await telaEvolucao(ctx, { cats, lancs, comMovimento, formulaPE }));
+    return raiz;
+  }
+
   // um seletor em vez de uma fileira de pílulas: com muitos meses, polui menos
   const mesesOpcoes = [...new Set([...comMovimento, comp])].sort().reverse();
   const selMes = selectSimples(mesesOpcoes.map(c => ({ valor: c, rotulo: competenciaLonga(c) })), comp, { class: 'select', style: 'max-width:240px' });
@@ -45,6 +59,7 @@ export async function render(ctx) {
   raiz.append(el('div', { class: 'page-head' },
     el('h1', { class: 'page-title', text: 'Dashboard' }),
     el('div', { class: 'page-desc', text: `Resultado gerencial de ${competenciaLonga(comp)}` }),
+    abas,
     el('div', { class: 'field', style: 'margin-top:14px; max-width:260px' },
       el('label', { text: 'Competência' }), selMes)
   ));
@@ -73,32 +88,20 @@ export async function render(ctx) {
     variacao: anterior ? variacao(atual.totais[chave], anterior.totais[chave]) : null,
     sentidoBom: SENTIDO_BOM[chave],
     contexto,
-    sparkline: serie(chave).some(v => v) ? sparkline(serie(chave), destaque ? 'var(--on-accent)' : 'var(--accent)') : null,
-    span: 'sp-3'
+    span: 'sp-4'
   });
   grid.append(
     kpi('RECEITA_TOTAL', 'Receita total', true, 'base do %AV'),
-    kpi('LUCRO_BRUTO', 'Lucro bruto', false, pctReceita(atual.totais.LUCRO_BRUTO) + ' da receita'),
     kpi('DESPESAS_FIXAS', 'Despesas fixas', false, pctReceita(atual.totais.DESPESAS_FIXAS) + ' da receita'),
     kpi('LUCRO_LIQUIDO', 'Lucro líquido', false, 'margem de ' + pctReceita(atual.totais.LUCRO_LIQUIDO))
   );
 
-  /* ---- 2. ponto de equilíbrio · CMV · margem ---- */
-  const pe = atual.totais.PONTO_EQUILIBRIO;
-  const acima = rt >= pe;
-  const proporcao = pe ? Math.min(100, (rt / pe) * 100) : 0;
-  grid.append(card({ titulo: 'Ponto de equilíbrio', sub: acima ? 'receita cobre os custos fixos' : 'receita abaixo do necessário', span: 'sp-4' },
-    el('div', { class: 'kpi-value num', text: moeda(pe) }),
-    el('div', { class: 'pe-track' }, el('div', { class: 'pe-fill' + (acima ? '' : ' abaixo'), style: `width:${proporcao}%` })),
-    el('div', { class: 'pe-legend' },
-      el('span', { text: 'receita ' + moeda(rt) }),
-      el('span', { class: acima ? 'pos' : 'neg', text: (acima ? '+' : '−') + moeda(Math.abs(rt - pe)) + (acima ? ' de folga' : ' faltando') }))
-  ));
+  /* ---- 2. CMV · margem ---- */
   grid.append(cardKPI({
     rotulo: 'CMV', valor: atual.totais.CUSTOS_VARIAVEIS,
     variacao: anterior ? variacao(atual.totais.CUSTOS_VARIAVEIS, anterior.totais.CUSTOS_VARIAVEIS) : null,
     sentidoBom: 'desce', contexto: pctReceita(atual.totais.CUSTOS_VARIAVEIS) + ' da receita',
-    sparkline: serie('CUSTOS_VARIAVEIS').some(v => v) ? sparkline(serie('CUSTOS_VARIAVEIS')) : null, span: 'sp-4'
+    span: 'sp-6'
   }));
   const margens = ultimos.map(c => { const d = dres.get(c); return d && d.totais.RECEITA_TOTAL ? d.totais.LUCRO_LIQUIDO / d.totais.RECEITA_TOTAL * 100 : 0; });
   const margemAtual = rt ? atual.totais.LUCRO_LIQUIDO / rt * 100 : 0;
@@ -107,7 +110,7 @@ export async function render(ctx) {
     rotulo: 'Margem líquida', valor: margemAtual, formato: v => v.toFixed(1) + '%',
     variacao: margemAnt ? (margemAtual - margemAnt) / Math.abs(margemAnt) * 100 : null,
     sentidoBom: 'sobe', contexto: 'lucro líquido ÷ receita',
-    sparkline: margens.some(v => v) ? sparkline(margens) : null, span: 'sp-4'
+    span: 'sp-6'
   }));
 
   /* ---- 3. receita × despesas × resultado, 6 meses ---- */
@@ -174,6 +177,103 @@ export async function render(ctx) {
     ], maioresLanc, { vazio: 'Nenhum lançamento neste mês.', rolagem: false })
   ));
 
+  return raiz;
+}
+
+/* ------------------------------------------------------------
+   Aba "Evolução mensal": escolha os meses, veja cada indicador ao longo deles
+   ------------------------------------------------------------ */
+
+const INDICADORES = [
+  { chave: 'RECEITA_TOTAL', nome: 'Receita total', cor: 'var(--accent)' },
+  { chave: 'CUSTOS_VARIAVEIS', nome: 'CMV', cor: 'var(--c1)' },
+  { chave: 'LUCRO_BRUTO', nome: 'Lucro bruto', cor: 'var(--c3)' },
+  { chave: 'DESPESAS_FIXAS', nome: 'Despesas fixas', cor: 'var(--c4)' },
+  { chave: 'LUCRO_OPERACIONAL', nome: 'Lucro operacional', cor: 'var(--c5)' },
+  { chave: 'LUCRO_LIQUIDO', nome: 'Lucro líquido', cor: 'var(--c2)' },
+  { chave: 'PONTO_EQUILIBRIO', nome: 'Ponto de equilíbrio', cor: 'var(--c6)' }
+];
+
+const EVO = { selecionadas: null };   // seleção de meses sobrevive a trocas de tela
+
+async function telaEvolucao(ctx, { cats, lancs, comMovimento, formulaPE }) {
+  const raiz = el('div', {});
+  const anos = [...new Set(comMovimento.map(c => c.slice(0, 4)))].sort();
+  if (!EVO.selecionadas || !EVO.selecionadas.every(c => comMovimento.includes(c))) EVO.selecionadas = [...comMovimento];
+
+  const painel = el('div', {});
+  raiz.append(painel);
+
+  function pintar() {
+    painel.textContent = '';
+    const sel = EVO.selecionadas;
+
+    /* ---- filtro: pílulas por mês, atalhos por ano e Todos ---- */
+    const pills = el('div', { class: 'pills', style: 'margin:0 0 18px' });
+    for (const c of comMovimento) {
+      pills.append(el('button', {
+        class: 'pill', type: 'button', 'aria-pressed': String(sel.includes(c)),
+        onclick: () => { const i = sel.indexOf(c); if (i >= 0) sel.splice(i, 1); else sel.push(c); sel.sort(); pintar(); }
+      }, competenciaCurta(c)));
+    }
+    pills.append(el('span', { class: 'faint', style: 'margin:0 4px 0 8px' }, '|'));
+    for (const a of anos) {
+      const doAno = comMovimento.filter(c => c.startsWith(a));
+      const todosDoAno = doAno.every(c => sel.includes(c));
+      pills.append(el('button', {
+        class: 'pill', type: 'button', 'aria-pressed': String(todosDoAno), title: todosDoAno ? `Desmarcar ${a}` : `Marcar todos os meses de ${a}`,
+        onclick: () => { EVO.selecionadas = todosDoAno ? sel.filter(c => !c.startsWith(a)) : [...new Set([...sel, ...doAno])].sort(); pintar(); }
+      }, a));
+    }
+    const todas = comMovimento.every(c => sel.includes(c));
+    pills.append(el('button', {
+      class: 'pill', type: 'button', 'aria-pressed': String(todas),
+      onclick: () => { EVO.selecionadas = todas ? [] : [...comMovimento]; pintar(); }
+    }, 'Todos'));
+    painel.append(pills);
+
+    if (!sel.length) {
+      painel.append(el('div', { class: 'card' }, el('div', { class: 'vazio', text: 'Marque um ou mais meses para ver a evolução.' })));
+      return;
+    }
+
+    const dres = calcularVarias(lancs, cats, sel, { formulaPE });
+    const rotulos = sel.map(competenciaCurta);
+    const valores = chave => sel.map(c => dres.get(c) ? dres.get(c).totais[chave] : 0);
+    const pctFmt = v => v.toFixed(1).replace('.', ',') + '%';
+    const grid = el('div', { class: 'grid' });
+
+    /* ---- visão combinada: receita × despesas × lucro ---- */
+    const despesas = sel.map(c => { const d = dres.get(c); return d ? d.totais.DEDUCOES + d.totais.CUSTOS_VARIAVEIS + d.totais.DESPESAS_FIXAS + d.totais.DESPESAS_FINANCEIRAS : 0; });
+    grid.append(card({ titulo: 'Receita × despesas × lucro líquido', sub: `${sel.length} mês(es) selecionado(s)`, span: 'sp-12' },
+      linhas(rotulos, [
+        { nome: 'Receita', cor: 'var(--accent)', valores: valores('RECEITA_TOTAL') },
+        { nome: 'Despesas', cor: 'var(--c1)', valores: despesas },
+        { nome: 'Lucro líquido', cor: 'var(--c2)', valores: valores('LUCRO_LIQUIDO') }
+      ])));
+
+    /* ---- percentuais sobre a receita ---- */
+    const margens = sel.map(c => { const d = dres.get(c); return d && d.totais.RECEITA_TOTAL ? d.totais.LUCRO_LIQUIDO / d.totais.RECEITA_TOTAL * 100 : 0; });
+    grid.append(card({ titulo: 'Margem líquida', sub: 'lucro líquido ÷ receita', span: 'sp-6' },
+      linhas(rotulos, [{ nome: 'Margem', cor: 'var(--c2)', valores: margens }], { formato: pctFmt, altura: 200 })));
+    const cmvPct = sel.map(c => { const d = dres.get(c); return d && d.totais.RECEITA_TOTAL ? d.totais.CUSTOS_VARIAVEIS / d.totais.RECEITA_TOTAL * 100 : 0; });
+    grid.append(card({ titulo: 'CMV sobre a receita', sub: 'quanto da venda vira custo da mercadoria', span: 'sp-6' },
+      linhas(rotulos, [{ nome: 'CMV %', cor: 'var(--c1)', valores: cmvPct }], { formato: pctFmt, altura: 200 })));
+
+    /* ---- um gráfico por indicador ---- */
+    for (const ind of INDICADORES) {
+      const v = valores(ind.chave);
+      const ultimo = v[v.length - 1], primeiro = v[0];
+      const varia = primeiro ? ((ultimo - primeiro) / Math.abs(primeiro) * 100) : null;
+      grid.append(card({
+        titulo: ind.nome,
+        sub: sel.length > 1 && varia != null ? `${rotulos[0]} → ${rotulos[rotulos.length - 1]}: ${varia >= 0 ? '+' : ''}${pctFmt(varia)}` : moeda(ultimo),
+        span: 'sp-6'
+      }, linhas(rotulos, [{ nome: ind.nome, cor: ind.cor, valores: v }], { altura: 200 })));
+    }
+    painel.append(grid);
+  }
+  pintar();
   return raiz;
 }
 

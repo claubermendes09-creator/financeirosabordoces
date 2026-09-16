@@ -107,10 +107,11 @@ export function cardKPI(o) {
 
   const rodape = el('div', { class: 'kpi-foot' });
   if (o.variacao != null && isFinite(o.variacao)) {
+    // cor pela direção, não pelo "sentido bom": subiu é verde, caiu é vermelho
+    // (foi pedido assim — uma despesa que cai aparece em vermelho mesmo sendo boa)
     const sobe = o.variacao >= 0;
-    const bom = (o.sentidoBom === 'desce') ? !sobe : sobe;
     rodape.append(el('span', {
-      class: 'delta ' + (Math.abs(o.variacao) < 0.05 ? 'flat' : (bom ? 'up' : 'down')),
+      class: 'delta ' + (Math.abs(o.variacao) < 0.05 ? 'flat' : (sobe ? 'up' : 'down')),
       title: 'Comparado ao mês anterior'
     }, (sobe ? '▲ ' : '▼ ') + pct(Math.abs(o.variacao))));
   }
