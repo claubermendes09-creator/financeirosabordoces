@@ -5,11 +5,13 @@
 # partir das variáveis de ambiente do site no Netlify
 #   Site configuration → Environment variables:
 #     SUPABASE_URL       = https://xxxx.supabase.co
-#     SUPABASE_ANON_KEY  = sb_publishable_...
+#     SUPABASE_ANON_KEY  = a anon key
+# Se alguma faltar, o build FALHA de propósito — um site publicado sem
+# elas abre em "modo local" e engana todo mundo.
 # ============================================================
 [build]
   publish = "."
-  command = "printf \"export const SUPABASE_URL = '%s';\nexport const SUPABASE_ANON_KEY = '%s';\n\" \"$SUPABASE_URL\" \"$SUPABASE_ANON_KEY\" > config.js"
+  command = "bash gerar-config.sh"
 
 [[headers]]
   for = "/*"
