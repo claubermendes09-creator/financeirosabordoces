@@ -1066,20 +1066,43 @@ function revisarUmaAUma() {
 
 async function confirmar(linhas) {
   // duplicada entra só quando o operador a marcou de propósito
-  const gravaveis = linhas.filter(l => !l.duplicado || l.selecionada);
+  let gravaveis = linhas.filter(l => !l.duplicado || l.selecionada);
   const puladas = linhas.length - gravaveis.length;
   const aceitas = gravaveis.filter(l => l.duplicado).length;
   if (!gravaveis.length) { toast.aviso('Todas as linhas escolhidas são duplicadas e nenhuma foi marcada para gravar.'); return; }
 
+  /* Linha que ficou de fora da seleção (sem sugestão, em conflito, ou
+     simplesmente não marcada) não pode evaporar: por padrão ela também é
+     gravada, como A CLASSIFICAR, e fica esperando na tela de Lançamentos.
+     Antes elas eram descartadas em silêncio — e só reimportando voltavam. */
+  const escolhidas = new Set(gravaveis.map(l => l.uid));
+  const foraDaSelecao = S.fila.filter(l => !escolhidas.has(l.uid) && !l.duplicado);
+  const catALancar = S.cats.find(c => c.nome === 'A CLASSIFICAR');
+  const chkPendentes = el('input', { type: 'checkbox', checked: true });
+
   const pendentes = gravaveis.filter(ehALancar).length;
-  const ok = await modal.confirmar('Confirmar gravação',
-    `Serão gravados <b>${gravaveis.length}</b> lançamento(s) em ${competenciaLonga(S.competencia)}, na conta <b>${esc(S.conta.nome)}</b>.` +
-    (pendentes ? `<br><br>${pendentes} entram como <b>A CLASSIFICAR</b> e continuam pendentes na tela de Lançamentos.` : '') +
-    (aceitas ? `<br><br><b>${aceitas}</b> duplicada(s) marcada(s) por você serão gravadas e passam a contar na DRE.` : '') +
-    (puladas ? `<br><br>${puladas} linha(s) duplicada(s) não marcadas serão ignoradas.` : '') +
-    `<br><br>A memória de aprendizado será atualizada com as suas escolhas.`,
-    { rotuloOk: 'Gravar' });
-  if (!ok) return;
+  const corpo = el('div', {},
+    el('p', { html: `Serão gravados <b>${gravaveis.length}</b> lançamento(s) em ${competenciaLonga(S.competencia)}, na conta <b>${esc(S.conta.nome)}</b>.` }),
+    pendentes ? el('p', { html: `${pendentes} entram como <b>A CLASSIFICAR</b> e continuam pendentes na tela de Lançamentos.` }) : null,
+    aceitas ? el('p', { html: `<b>${aceitas}</b> duplicada(s) marcada(s) por você serão gravadas e passam a contar na DRE.` }) : null,
+    puladas ? el('p', { html: `${puladas} linha(s) duplicada(s) não marcadas serão ignoradas.` }) : null,
+    foraDaSelecao.length
+      ? el('label', { class: 'check', style: 'margin-top:6px; display:flex; gap:10px; align-items:flex-start' }, chkPendentes,
+        el('span', { html: `Gravar também as <b>${foraDaSelecao.length}</b> linha(s) que não estão marcadas como <b>A CLASSIFICAR</b>, ` +
+          'para decidir depois na tela de Lançamentos. <span class="faint">Desmarcando, elas ficam fora e só voltam reimportando o arquivo.</span>' }))
+      : null,
+    el('p', { class: 'faint', text: 'A memória de aprendizado será atualizada com as suas escolhas.' })
+  );
+  const acao = await modal.abrir({
+    titulo: 'Confirmar gravação', corpo,
+    acoes: [{ rotulo: 'Cancelar', classe: 'btn-ghost', valor: null }, { rotulo: 'Gravar', classe: 'btn-primary', valor: 'ok' }]
+  });
+  if (!acao) return;
+
+  if (foraDaSelecao.length && chkPendentes.checked && catALancar) {
+    // entram sem a sugestão que o operador não confirmou: pendente é pendente
+    gravaveis = [...gravaveis, ...foraDaSelecao.map(l => ({ ...l, categoria_id: catALancar.id, sugestao: null, propagada: null }))];
+  }
 
   const t = toast.info('Gravando…', 60000);
   try {
