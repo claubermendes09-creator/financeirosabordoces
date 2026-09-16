@@ -74,9 +74,20 @@ async function iniciar() {
     toast.erro('Não consegui falar com o Supabase: ' + e.message);
   }
   if (estadoSessao === 'recuperacao') { await telaRedefinirSenha(); return; }
+
+  // Lembra em que modo este navegador rodou da última vez. Se ele estava em
+  // modo local e agora a nuvem ligou, o que foi feito aqui ainda não existe
+  // lá — e a sincronização apagaria tudo. Guarda antes, pergunta depois.
+  const modoAnterior = await db.getConfig('modo_ultimo', null);
+  let resgate = null;
+  if (nuvem.ativa() && modoAnterior === 'local') resgate = await guardarDadosLocais();
+  await db.setConfig('modo_ultimo', nuvem.ativa() ? 'nuvem' : 'local');
+
   if (estadoSessao === 'ok' && nuvem.ativa()) {
     estadoInicial('Sincronizando com a nuvem…');
     await sincronizarComAviso(estadoInicial);
+    if (!resgate) resgate = await db.getConfig('resgate_local', null);
+    if (resgate) await oferecerResgate(resgate);
   }
 
   auth.aoAvisar(() => toast.aviso('Sua sessão expira em 2 minutos por inatividade.', 115000));
@@ -455,6 +466,53 @@ async function telaRedefinirSenha() {
 /* ------------------------------------------------------------
    Sincronização com a nuvem
    ------------------------------------------------------------ */
+
+/* ------------------------------------------------------------
+   Resgate do que foi feito em modo local
+   ------------------------------------------------------------ */
+
+/** Copia o que há no navegador antes de a sincronização limpar o cache. */
+async function guardarDadosLocais() {
+  const lancamentos = await db.listar('lancamento');
+  const regras = await db.listar('regra');
+  if (!lancamentos.length && !regras.length) return null;
+  // guarda também numa cópia persistente: se a pessoa fechar a aba no meio,
+  // a próxima abertura ainda encontra o resgate pendente
+  const pacote = { quando: new Date().toISOString(), lancamentos, regras };
+  await db.setConfig('resgate_local', pacote);
+  return pacote;
+}
+
+/**
+ * Já sincronizado com a nuvem: o que existia localmente e não está lá?
+ * Compara por hash (lançamentos) e por padrão+tipo (regras) e oferece enviar.
+ */
+async function oferecerResgate(pacote) {
+  const naNuvem = new Set((await db.listar('lancamento')).map(l => l.hash_dedup));
+  const regrasNuvem = new Set((await db.listar('regra')).map(r => `${r.tipo_match}|${r.padrao_norm}|${r.conta_id || ''}`));
+  const lancs = pacote.lancamentos.filter(l => !naNuvem.has(l.hash_dedup));
+  const regras = pacote.regras.filter(r => !regrasNuvem.has(`${r.tipo_match}|${r.padrao_norm}|${r.conta_id || ''}`));
+  if (!lancs.length && !regras.length) { await db.setConfig('resgate_local', null); return; }
+
+  const meses = [...new Set(lancs.map(l => l.competencia))].sort().join(', ');
+  const enviar = await modal.confirmar('Dados feitos em modo local',
+    `Este navegador estava em <b>modo local</b> e tem <b>${lancs.length}</b> lançamento(s)` +
+    (meses ? ` (${meses})` : '') + ` e <b>${regras.length}</b> regra(s) que ainda não existem na nuvem.<br><br>` +
+    'Quer enviá-los para a nuvem agora? Se recusar, eles ficam guardados neste navegador e a pergunta volta na próxima abertura.',
+    { rotuloOk: 'Enviar para a nuvem' });
+  if (!enviar) return;
+
+  try {
+    const emp = nuvem.empresaId();
+    if (regras.length) await db.importarTudo({ regra: regras.map(r => ({ ...r, empresa_id: emp })) }, 'mesclar');
+    if (lancs.length) await db.importarTudo({ lancamento: lancs.map(l => ({ ...l, empresa_id: emp, lote_id: null, criado_por: null })) }, 'mesclar');
+    await db.setConfig('resgate_local', null);
+    toast.ok(`${lancs.length} lançamento(s) e ${regras.length} regra(s) enviados para a nuvem.`);
+  } catch (e) {
+    console.error(e);
+    toast.erro('Não consegui enviar: ' + e.message + ' — os dados continuam guardados neste navegador.', 12000);
+  }
+}
 
 async function sincronizarComAviso(aoProgredir = null) {
   if (!nuvem.ativa()) return;
