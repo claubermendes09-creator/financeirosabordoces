@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Controle financeiro e DRE gerencial do Sabor Doces &amp; Salgados">
+  <title>DRE Sabor — Sabor Doces &amp; Salgados</title>
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310B981'/%3E%3Ctext x='16' y='22' font-family='system-ui,sans-serif' font-size='15' font-weight='700' fill='%2305231A' text-anchor='middle'%3ESD%3C/text%3E%3C/svg%3E">
+
+  <!-- SheetJS local: leitura dos extratos .xlsx / .xls no próprio navegador -->
+  <script src="vendor/xlsx.full.min.js"></script>
+  <!-- supabase-js (Etapa 2). Só é usado se existir um config.js na raiz. -->
+  <script src="vendor/supabase.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="auth-bg">
+      <div class="auth-card">
+        <div class="auth-logo" aria-hidden="true">SD</div>
+        <h1>DRE Sabor</h1>
+        <div class="sub" id="estado-inicial">Carregando…</div>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    Abrir o arquivo com duplo clique (file://) não funciona: o navegador
+    bloqueia módulos ES fora de HTTP. Este aviso troca a tela de "Carregando…"
+    eterna por uma instrução clara.
+  -->
+  <script>
+    (function () {
+      var alvo = document.getElementById('estado-inicial');
+      if (location.protocol === 'file:') {
+        alvo.innerHTML =
+          '<div style="text-align:left; line-height:1.7">' +
+          '<b style="color:var(--warn)">O app precisa ser servido por HTTP.</b><br><br>' +
+          'Abrir o <code>index.html</code> com duplo clique não funciona — o navegador ' +
+          'bloqueia módulos JavaScript no protocolo <code>file://</code>.<br><br>' +
+          'No terminal, dentro da pasta do projeto:<br>' +
+          '<code style="display:block; margin:8px 0; padding:8px 10px; background:var(--bg-input); border-radius:8px">node servidor.js</code>' +
+          'e abra <b>http://localhost:8080</b>.<br><br>' +
+          '<span style="color:var(--text-faint)">No VS Code, o botão “Go Live” do Live Server também resolve.</span>' +
+          '</div>';
+        return;
+      }
+      // Se em 8s o app não montou, algo falhou no carregamento dos módulos.
+      setTimeout(function () {
+        // se o app.js já rodou (data-app), a demora é sincronização, não falha
+        if (document.getElementById('estado-inicial') && !document.documentElement.dataset.app) {
+          alvo.innerHTML = 'Falhou ao carregar os módulos. Abra o console do navegador ' +
+            '(F12) para ver o erro, e confira se <code>vendor/xlsx.full.min.js</code> existe.';
+        }
+      }, 8000);
+    })();
+  </script>
+
+  <noscript>
+    <div style="padding:24px">Este aplicativo precisa de JavaScript habilitado.</div>
+  </noscript>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+/* ============================================================
+   DRE Sabor — Design Tokens
+   Nunca escreva cor literal fora deste arquivo.
+   ============================================================ */
+
+:root {
+  /* Superfícies — tema escuro (padrão) */
+  --bg-app:        #0B0D0C;
+  --bg-shell:      #141716;
+  --bg-card:       #1B1F1D;
+  --bg-card-hover: #232825;
+  --bg-input:      #202523;
+  --border:        rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.14);
+
+  /* Texto */
+  --text:          #F2F5F3;
+  --text-muted:    #9BA5A0;
+  --text-faint:    #6B7570;
+
+  /* Accent principal */
+  --accent:        #10B981;
+  --accent-soft:   #34D399;
+  --accent-deep:   #059669;
+  --accent-grad:   linear-gradient(135deg, #34D399 0%, #0E9F6E 100%);
+  --on-accent:     #05231A;
+
+  /* Paleta de dados (gráficos, categorias) */
+  --c1: #8B7CF6;  /* roxo    */
+  --c2: #C8F169;  /* lima    */
+  --c3: #10B981;  /* verde   */
+  --c4: #F59E0B;  /* âmbar   */
+  --c5: #38BDF8;  /* azul    */
+  --c6: #FB7185;  /* rosa    */
+
+  /* Semânticos */
+  --pos: #34D399;
+  --neg: #FB7185;
+  --warn: #FBBF24;
+  --info: #60A5FA;
+
+  /* Forma */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-pill: 999px;
+  --shadow-card: 0 8px 28px rgba(0,0,0,.45);
+  --blur-glass: blur(18px);
+
+  /* Derivados de apoio (sempre a partir dos tokens acima) */
+  --overlay:       rgba(0,0,0,.62);
+  --scrim:         rgba(255,255,255,.04);
+  --track:         rgba(255,255,255,.06);
+  --focus-ring:    0 0 0 2px var(--accent);
+  --sidebar-w:     72px;
+  --topbar-h:      68px;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg-app:        #EEF1EF;
+  --bg-shell:      #F7F9F8;
+  --bg-card:       #FFFFFF;
+  --bg-card-hover: #F1F4F2;
+  --bg-input:      #F2F5F3;
+  --border:        rgba(18,22,20,0.09);
+  --border-strong: rgba(18,22,20,0.18);
+
+  --text:          #121614;
+  --text-muted:    #5C6661;
+  --text-faint:    #8A938E;
+
+  --accent:        #059669;
+  --accent-soft:   #10B981;
+  --accent-deep:   #047857;
+  --accent-grad:   linear-gradient(135deg, #34D399 0%, #0E9F6E 100%);
+  --on-accent:     #05231A;
+
+  --c1: #6D5BD0;
+  --c2: #8FBB2B;
+  --c3: #059669;
+  --c4: #D97706;
+  --c5: #0284C7;
+  --c6: #E11D48;
+
+  --pos: #047857;
+  --neg: #BE123C;
+  --warn: #B45309;
+  --info: #1D4ED8;
+
+  --shadow-card: 0 8px 24px rgba(18,22,20,.10);
+  --overlay:      rgba(18,22,20,.42);
+  --scrim:        rgba(18,22,20,.03);
+  --track:        rgba(18,22,20,.07);
+
+  color-scheme: light;
+}
+
+/* Paleta de dados como lista, para uso programático em JS */
+:root {
+  --serie-1: var(--c1);
+  --serie-2: var(--c2);
+  --serie-3: var(--c3);
+  --serie-4: var(--c4);
+  --serie-5: var(--c5);
+  --serie-6: var(--c6);
+}

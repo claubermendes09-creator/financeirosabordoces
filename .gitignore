@@ -1,0 +1,7 @@
+config.js
+dados/*.json
+node_modules/
+.netlify/
+CONTINUAR_BUILD.md
+PROMPT_APP_DRE.md
+README.md

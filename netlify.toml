@@ -1,0 +1,17 @@
+# ============================================================
+# netlify.toml — deploy automático a partir do Git.
+#
+# O config.js não vai para o repositório: é gerado na hora do build a
+# partir das variáveis de ambiente do site no Netlify
+#   Site configuration → Environment variables:
+#     SUPABASE_URL       = https://xxxx.supabase.co
+#     SUPABASE_ANON_KEY  = sb_publishable_...
+# ============================================================
+[build]
+  publish = "."
+  command = "printf \"export const SUPABASE_URL = '%s';\nexport const SUPABASE_ANON_KEY = '%s';\n\" \"$SUPABASE_URL\" \"$SUPABASE_ANON_KEY\" > config.js"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache"
