@@ -9,6 +9,7 @@ import { el, inteiro, baixarArquivo, dataBR } from '../util.js';
 import { icone, card, selectSimples } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
 import toast from '../ui/toast.js';
+import { ordenavel } from '../ui/tabela.js';
 
 export const titulo = 'Backup';
 
@@ -98,11 +99,11 @@ export async function render(ctx) {
     raiz.append(el('div', { style: 'margin-top:20px' },
       card({ titulo: 'Histórico de importações' },
         el('div', { class: 'tbl-scroll' },
-          el('table', { class: 'tbl' },
+          ordenavel(el('table', { class: 'tbl' },
             el('thead', {}, el('tr', {},
               el('th', {}, 'Data'), el('th', {}, 'Arquivo'), el('th', {}, 'Conta'),
               el('th', {}, 'Competência'), el('th', { class: 'right' }, 'Gravadas'), el('th', {}, 'Status'))),
-            tbody)))));
+            tbody))))));
   }
 
   return raiz;

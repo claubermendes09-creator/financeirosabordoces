@@ -14,6 +14,7 @@ import {
 import { selectCategorias, selectSimples, badgeStatus, badgeOrigem, icone } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
 import toast from '../ui/toast.js';
+import { ordenavel } from '../ui/tabela.js';
 
 export const titulo = 'Lançamentos';
 
@@ -36,6 +37,7 @@ export async function render(ctx) {
       texto: ctx.params.q || ''
     },
     selecionados: new Set(),
+    ordem: null,
     pagina: 1,
     porPagina: 100
   };
@@ -67,7 +69,26 @@ function filtrados() {
       if (!alvo.includes(q)) return false;
     }
     return true;
-  }).sort((a, b) => (b.data.localeCompare(a.data)) || (b.criado_em || '').localeCompare(a.criado_em || ''));
+  }).sort(comparadorAtual());
+}
+
+/* colunas da tabela, na ordem do cabeçalho: como extrair o valor de ordenação */
+const COLUNAS_ORD = {
+  1: l => l.data, 2: l => normalizar(l.descricao), 3: l => (S.contaMap.get(l.conta_id) || {}).nome || '',
+  4: l => Number(l.valor || 0), 5: l => (S.catMap.get(l.categoria_id) || {}).nome || '',
+  6: l => l.status, 7: l => l.origem
+};
+
+function comparadorAtual() {
+  const o = S.ordem;
+  const chave = o && COLUNAS_ORD[o.indice];
+  if (!chave) return (a, b) => (b.data.localeCompare(a.data)) || (b.criado_em || '').localeCompare(a.criado_em || '');
+  const sinal = o.direcao === 'desc' ? -1 : 1;
+  return (a, b) => {
+    const va = chave(a), vb = chave(b);
+    const r = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb), 'pt-BR', { numeric: true });
+    return sinal * (r || b.data.localeCompare(a.data));
+  };
 }
 
 function pintar() {
@@ -309,6 +330,7 @@ function tabelaLancamentos(lista) {
       el('th', {}, 'Status'), el('th', {}, 'Origem'), el('th', { class: 'right' }, '')
     )), tbody);
 
+  ordenavel(t, { atual: S.ordem, aoOrdenar: (indice, direcao) => { S.ordem = { indice, direcao }; S.pagina = 1; pintar(); } });
   return el('div', { class: 'tbl-scroll' }, t);
 }
 

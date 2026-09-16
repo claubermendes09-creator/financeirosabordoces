@@ -21,6 +21,7 @@ import { campo, selectCategorias, selectSimples, icone, badgeDuplicado, badgeCon
 import modal from '../ui/modal.js';
 import { pedirRateio } from '../ui/dividir.js';
 import toast from '../ui/toast.js';
+import { ordenavel } from '../ui/tabela.js';
 
 export const titulo = 'Importar extrato';
 
@@ -41,6 +42,7 @@ export async function render(ctx) {
     opcoes: { ...imp.OPCOES_PADRAO, ...(opcoesSalvas || {}) },
     etapa: 1,
     filtroFila: 'todas',
+    ordem: null,
     filtroCol: { data: '', descricao: '', favorecido: '', valor: '', categoria: '', confianca: '' },
     focoFiltro: null,
     focoRevisao: -1
@@ -407,7 +409,7 @@ async function telaFila() {
   wrap.append(barra);
 
   /* ---- tabela da fila ---- */
-  const visiveis = S.fila.filter(filtroAtivo);
+  const visiveis = ordenarFila(S.fila.filter(filtroAtivo));
 
   /* ---- aplicar uma categoria a tudo que passou pelos filtros ----
      Filtrou "diaria" na descrição? Escolhe DIÁRIAS aqui e resolve as 40
@@ -499,6 +501,7 @@ async function telaFila() {
     ),
     tbody
   );
+  ordenavel(tabela, { atual: S.ordem, aoOrdenar: (indice, direcao) => { S.ordem = { indice, direcao }; pintar(); } });
   wrap.append(el('div', { class: 'tbl-scroll', style: 'margin-top:4px' }, tabela));
 
   if (temFiltroDeColuna()) {
@@ -644,6 +647,25 @@ async function alinharComMaioria() {
   if (!n) { toast.aviso('Nenhum grupo marcado.'); return; }
   toast.ok(`${n} linha(s) alinhada(s) com a maioria.`);
   pintar();
+}
+
+/* ordem escolhida no cabeçalho (data, descrição, favorecido, valor, categoria, confiança) */
+function ordenarFila(lista) {
+  const o = S.ordem;
+  if (!o) return lista;
+  const nomeCat = id => (S.cats.find(c => c.id === id) || {}).nome || '';
+  const chaves = {
+    1: l => l.data, 2: l => normalizar(l.descricao), 3: l => normalizar(l.favorecido || ''),
+    4: l => l.valor, 5: l => nomeCat(l.categoria_id), 6: l => l.sugestao ? l.sugestao.confianca : -1
+  };
+  const chave = chaves[o.indice];
+  if (!chave) return lista;
+  const sinal = o.direcao === 'desc' ? -1 : 1;
+  return [...lista].sort((a, b) => {
+    const va = chave(a), vb = chave(b);
+    const r = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb), 'pt-BR', { numeric: true });
+    return sinal * r;
+  });
 }
 
 function ehALancar(l) {

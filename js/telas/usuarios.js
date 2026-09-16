@@ -8,6 +8,7 @@ import { el, dataBR, esc } from '../util.js';
 import { campo, selectSimples, icone, badge } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
 import toast from '../ui/toast.js';
+import { ordenavel } from '../ui/tabela.js';
 
 export const titulo = 'Usuários';
 
@@ -149,11 +150,11 @@ function pintar() {
   }
 
   S.painel.append(el('div', { class: 'tbl-scroll' },
-    el('table', { class: 'tbl' },
+    ordenavel(el('table', { class: 'tbl' },
       el('thead', {}, el('tr', {},
         el('th', {}, 'Nome'), el('th', {}, 'E-mail'), el('th', {}, 'Perfil'),
         el('th', {}, 'Situação'), el('th', {}, 'Criado em'), el('th', { class: 'right' }, ''))),
-      tbody)));
+      tbody))));
 
   S.painel.append(el('div', { class: 'grid', style: 'margin-top:20px' },
     ...Object.entries(auth.PAPEIS).map(([k, v]) =>

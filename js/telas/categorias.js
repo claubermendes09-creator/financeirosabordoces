@@ -14,6 +14,7 @@ import {
 import { selectCategorias, selectSimples, campo, icone } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
 import toast from '../ui/toast.js';
+import { ordenavel } from '../ui/tabela.js';
 
 export const titulo = 'Categorias & Regras';
 
@@ -91,8 +92,8 @@ function painelCategorias() {
   const wrap = el('div', {});
 
   const barra = el('div', { class: 'toolbar' });
-  const busca = el('input', { class: 'input', type: 'search', placeholder: 'Buscar categoria…', value: S.buscaCat });
-  busca.addEventListener('input', debounce(() => { S.buscaCat = busca.value; pintar(); busca.focus(); }, 250));
+  const busca = el('input', { class: 'input', type: 'search', placeholder: 'Buscar categoria…', value: S.buscaCat, id: 'c-busca' });
+  busca.addEventListener('input', debounce(() => { S.buscaCat = busca.value; pintar(); refocar('c-busca'); }, 250));
   barra.append(el('div', { class: 'grow' }, busca));
   if (podeEditar) {
     barra.append(el('button', { class: 'btn btn-sm btn-primary', onclick: () => editarCategoria(null) }, icone('lancar', 14), 'Nova categoria'));
@@ -377,8 +378,8 @@ function painelRegras() {
   const wrap = el('div', {});
 
   const barra = el('div', { class: 'toolbar' });
-  const busca = el('input', { class: 'input', type: 'search', placeholder: 'Buscar padrão ou categoria…', value: S.buscaRegra });
-  busca.addEventListener('input', debounce(() => { S.buscaRegra = busca.value; pintar(); busca.focus(); }, 250));
+  const busca = el('input', { class: 'input', type: 'search', placeholder: 'Buscar padrão ou categoria…', value: S.buscaRegra, id: 'r-busca' });
+  busca.addEventListener('input', debounce(() => { S.buscaRegra = busca.value; pintar(); refocar('r-busca'); }, 250));
   barra.append(el('div', { class: 'grow' }, busca));
 
   const selOrigem = selectSimples([
@@ -444,12 +445,12 @@ function painelRegras() {
   }
 
   wrap.append(el('div', { class: 'tbl-scroll' },
-    el('table', { class: 'tbl', style: 'min-width:960px' },
+    ordenavel(el('table', { class: 'tbl', style: 'min-width:960px' },
       el('thead', {}, el('tr', {},
         el('th', {}, 'Padrão'), el('th', {}, 'Tipo'), el('th', {}, 'Categoria'), el('th', {}, 'Conta'),
         el('th', { class: 'right' }, 'Acertos / Erros'), el('th', { class: 'right' }, 'Confiança'),
         el('th', {}, 'Origem'), el('th', {}, 'Último uso'), el('th', { class: 'right' }, ''))),
-      tbody)));
+      tbody))));
 
   return wrap;
 }
@@ -572,6 +573,15 @@ function subirMemoria() {
   document.body.append(input);
   input.click();
   setTimeout(() => input.remove(), 1000);
+}
+
+/** A repintura troca a caixa por outra: devolve o foco à nova, cursor no fim. */
+function refocar(id) {
+  const nova = document.getElementById(id);
+  if (!nova) return;
+  nova.focus();
+  const n = nova.value.length;
+  try { nova.setSelectionRange(n, n); } catch { /* type=search em alguns navegadores */ }
 }
 
 export default { titulo, render };

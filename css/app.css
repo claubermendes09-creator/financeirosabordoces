@@ -737,3 +737,12 @@ table.dre td.av, table.dre th.av { font-size: 11.5px; color: var(--text-faint); 
 /* nas barras agrupadas o mês fora de foco fica sólido e esmaecido, não hachurado */
 .bar-group .bar { background: var(--barc); border-color: transparent; opacity: .38; }
 .bar-group .bar.foco { opacity: 1; }
+
+/* cabeçalho ordenável */
+th.th-ord { cursor: pointer; user-select: none; }
+th.th-ord:hover { color: var(--text); }
+th.th-ord::after { content: ""; display: inline-block; width: 0; height: 0; margin-left: 6px; vertical-align: middle;
+  border-left: 4px solid transparent; border-right: 4px solid transparent; opacity: .35; }
+th.th-ord::after { border-top: 5px solid currentColor; }
+th.th-ord.ord-asc::after { border-top: 0; border-bottom: 5px solid var(--accent); opacity: 1; }
+th.th-ord.ord-desc::after { border-top: 5px solid var(--accent); opacity: 1; }
