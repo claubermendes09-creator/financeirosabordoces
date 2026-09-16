@@ -12,7 +12,7 @@
 import estado from '../estado.js';
 import { calcularVarias, variacao, SENTIDO_BOM, GRUPOS_DESPESA_FIXA } from '../dre.js';
 import { el, moeda, dataBR, competenciaCurta, competenciaLonga, competenciaAnterior, competenciaHoje, truncar } from '../util.js';
-import { cardKPI, card, pilulas, icone } from '../ui/componentes.js';
+import { cardKPI, card, selectSimples, icone } from '../ui/componentes.js';
 import { barrasAgrupadas, barrasHorizontais, donut, sparkline } from '../ui/grafico.js';
 import { tabela } from '../ui/tabela.js';
 
@@ -38,13 +38,15 @@ export async function render(ctx) {
   const raiz = document.createDocumentFragment();
 
   /* ---- cabeçalho ---- */
-  // todos os meses com lançamento, em ordem — a barra quebra linha se precisar
-  const mesesPilula = [...comps].sort().filter(c => comMovimento.includes(c) || c === comp);
+  // um seletor em vez de uma fileira de pílulas: com muitos meses, polui menos
+  const mesesOpcoes = [...new Set([...comMovimento, comp])].sort().reverse();
+  const selMes = selectSimples(mesesOpcoes.map(c => ({ valor: c, rotulo: competenciaLonga(c) })), comp, { class: 'select', style: 'max-width:240px' });
+  selMes.addEventListener('change', () => ctx.irPara('#/dashboard?mes=' + selMes.value));
   raiz.append(el('div', { class: 'page-head' },
     el('h1', { class: 'page-title', text: 'Dashboard' }),
     el('div', { class: 'page-desc', text: `Resultado gerencial de ${competenciaLonga(comp)}` }),
-    pilulas(mesesPilula.map(c => ({ valor: c, rotulo: competenciaCurta(c) })), comp,
-      v => ctx.irPara('#/dashboard?mes=' + v))
+    el('div', { class: 'field', style: 'margin-top:14px; max-width:260px' },
+      el('label', { text: 'Competência' }), selMes)
   ));
 
   /* ---- alerta de pendências ---- */
