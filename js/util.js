@@ -280,3 +280,26 @@ export function agrupar(lista, chaveFn) {
 export function somar(lista, fn = x => x) {
   return round2(lista.reduce((a, b) => a + (Number(fn(b)) || 0), 0));
 }
+
+/* ------------------------------------------------------------
+   Rolagem preservada entre repinturas
+   ------------------------------------------------------------ */
+
+/**
+ * Toda tela de lista é redesenhada do zero a cada mudança (categoria numa
+ * linha, filtro, checkbox). Sem isto a página e as tabelas voltam ao topo.
+ * Guarda a posição da página (.content) e de cada área rolável dentro de
+ * `raiz`, roda `repintar` e devolve tudo ao lugar no próximo frame.
+ */
+export async function comRolagemMantida(raiz, repintar) {
+  const conteudo = raiz && raiz.closest ? raiz.closest('.content') : null;
+  const pagina = conteudo ? conteudo.scrollTop : 0;
+  const areas = raiz ? [...raiz.querySelectorAll('.tbl-scroll, .dre-wrap, .tbl-wrap')].map(a => [a.scrollTop, a.scrollLeft]) : [];
+  await repintar();
+  if (!pagina && !areas.some(a => a[0] || a[1])) return;
+  requestAnimationFrame(() => {
+    if (conteudo) conteudo.scrollTop = pagina;
+    const novas = raiz ? [...raiz.querySelectorAll('.tbl-scroll, .dre-wrap, .tbl-wrap')] : [];
+    novas.forEach((a, i) => { if (areas[i]) { a.scrollTop = areas[i][0]; a.scrollLeft = areas[i][1]; } });
+  });
+}

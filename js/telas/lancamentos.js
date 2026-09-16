@@ -9,7 +9,7 @@ import { montarHistorico } from '../importadores/index.js';
 import { nucleoDescricao, ensinar } from '../aprendizado.js';
 import {
   el, moeda, dataBR, competenciaLonga, competenciaCurta, truncar,
-  normalizar, debounce, inteiro, esc, baixarArquivo, csvCampo
+  normalizar, debounce, inteiro, esc, baixarArquivo, csvCampo, comRolagemMantida
 } from '../util.js';
 import { selectCategorias, selectSimples, badgeStatus, badgeOrigem, icone } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
@@ -92,6 +92,10 @@ function comparadorAtual() {
 }
 
 function pintar() {
+  return comRolagemMantida(S.painel, pintarAgora);
+}
+
+function pintarAgora() {
   S.painel.textContent = '';
   S.painel.append(barraFiltros());
 

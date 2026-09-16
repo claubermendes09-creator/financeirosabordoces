@@ -15,7 +15,7 @@ import imp from '../importadores/index.js';
 import { carregarMemoria, chaveDeAgrupamento, ROTULO_NIVEL, CLASSE_NIVEL } from '../aprendizado.js';
 import {
   el, moeda, dataBR, competenciaHoje, competenciaLonga, competenciaCurta,
-  inteiro, truncar, esc, normalizar, debounce, uuid, round2
+  inteiro, truncar, esc, normalizar, debounce, uuid, round2, comRolagemMantida
 } from '../util.js';
 import { campo, selectCategorias, selectSimples, icone, badgeDuplicado, badgeConflito, card } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
@@ -67,24 +67,13 @@ export async function render(ctx) {
 }
 
 async function pintar() {
-  // a fila é redesenhada a cada decisão: guarda onde a pessoa estava (a
-  // página e a própria tabela rolam separado) e devolve depois de repintar
-  const conteudo = S.painel.closest('.content');
-  const tabela = S.painel.querySelector('.tbl-scroll');
-  const rolagem = { pagina: conteudo ? conteudo.scrollTop : 0, tabela: tabela ? tabela.scrollTop : 0, lado: tabela ? tabela.scrollLeft : 0 };
-
-  S.painel.textContent = '';
-  S.painel.append(passos());
-  if (S.etapa === 1) S.painel.append(await telaEscolha());
-  else S.painel.append(await telaFila());
-
-  if (S.etapa === 2 && (rolagem.pagina || rolagem.tabela)) {
-    requestAnimationFrame(() => {
-      if (conteudo) conteudo.scrollTop = rolagem.pagina;
-      const nova = S.painel.querySelector('.tbl-scroll');
-      if (nova) { nova.scrollTop = rolagem.tabela; nova.scrollLeft = rolagem.lado; }
-    });
-  }
+  // a fila é redesenhada a cada decisão: a rolagem (página e tabela) fica onde estava
+  await comRolagemMantida(S.painel, async () => {
+    S.painel.textContent = '';
+    S.painel.append(passos());
+    if (S.etapa === 1) S.painel.append(await telaEscolha());
+    else S.painel.append(await telaFila());
+  });
 }
 
 function passos() {

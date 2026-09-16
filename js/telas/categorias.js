@@ -9,7 +9,7 @@ import { GRUPOS_DESPESA_FIXA } from '../dre.js';
 import { exportarMemoria, importarMemoria, reconstruirMemoria, nivelDe, ROTULO_NIVEL, CLASSE_NIVEL, TIPOS_MATCH } from '../aprendizado.js';
 import {
   el, dataBR, inteiro, truncar, normalizar, debounce, esc,
-  baixarArquivo, uuid
+  baixarArquivo, uuid, comRolagemMantida
 } from '../util.js';
 import { selectCategorias, selectSimples, campo, icone } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
@@ -76,6 +76,10 @@ async function recarregar() {
 }
 
 function pintar() {
+  return comRolagemMantida(S.painel, pintarAgora);
+}
+
+function pintarAgora() {
   S.painel.textContent = '';
   S.painel.append(S.aba === 'categorias' ? painelCategorias() : painelRegras());
   // mantém as pílulas em sincronia

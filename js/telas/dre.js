@@ -8,7 +8,7 @@ import estado from '../estado.js';
 import { calcularVarias, FORMULAS_PE } from '../dre.js';
 import {
   el, moeda, pct, competenciaLonga, competenciaCurta, competenciaHoje,
-  baixarArquivo, csvCampo, round2
+  baixarArquivo, csvCampo, round2, comRolagemMantida
 } from '../util.js';
 import { selectSimples, icone, card } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
@@ -51,6 +51,10 @@ export async function render(ctx) {
 }
 
 function pintar() {
+  return comRolagemMantida(S.painel, pintarAgora);
+}
+
+function pintarAgora() {
   S.painel.textContent = '';
 
   const dres = calcularVarias(S.lancs, S.cats, S.selecionadas, { formulaPE: S.formulaPE });

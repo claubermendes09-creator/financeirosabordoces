@@ -4,7 +4,7 @@
 
 import auth from '../auth.js';
 import empresa from '../empresa.js';
-import { el, dataBR, esc } from '../util.js';
+import { el, dataBR, esc, comRolagemMantida } from '../util.js';
 import { campo, selectSimples, icone, badge } from '../ui/componentes.js';
 import modal from '../ui/modal.js';
 import toast from '../ui/toast.js';
@@ -121,6 +121,10 @@ async function recarregar() {
 }
 
 function pintar() {
+  return comRolagemMantida(S.painel, pintarAgora);
+}
+
+function pintarAgora() {
   S.painel.textContent = '';
 
   S.painel.append(el('div', { class: 'toolbar' },
