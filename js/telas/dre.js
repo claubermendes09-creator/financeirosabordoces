@@ -55,6 +55,7 @@ function pintar() {
 
   const dres = calcularVarias(S.lancs, S.cats, S.selecionadas, { formulaPE: S.formulaPE });
   const principal = dres.get(S.selecionadas[S.selecionadas.length - 1]);
+  const todasMarcadas = S.comMovimento.length > 0 && S.comMovimento.every(c => S.selecionadas.includes(c));
 
   /* ---- cabeçalho ---- */
   const cabecalho = el('div', { class: 'page-head' },
@@ -62,7 +63,7 @@ function pintar() {
     el('div', { class: 'page-desc' },
       S.selecionadas.length > 1
         ? `${S.selecionadas.length} competências: ${S.selecionadas.map(competenciaCurta).join(' · ')}`
-        : `Competência de ${competenciaLonga(S.selecionadas[0])}`)
+        : (S.selecionadas.length === 1 ? `Competência de ${competenciaLonga(S.selecionadas[0])}` : 'Nenhuma competência selecionada — marque os meses que quer ver'))
   );
 
   const pills = el('div', { class: 'pills' });
@@ -78,9 +79,11 @@ function pintar() {
   }
 
   pills.append(el('span', { class: 'faint', style: 'margin: 0 4px 0 8px' }, '|'));
+  // interruptor: com tudo marcado, clicar de novo limpa a seleção
   pills.append(el('button', {
-    class: 'pill', type: 'button', title: 'Mostrar todas as competências com lançamento',
-    onclick: () => { S.selecionadas = [...S.comMovimento]; pintar(); }
+    class: 'pill', type: 'button', 'aria-pressed': String(todasMarcadas),
+    title: todasMarcadas ? 'Desmarcar todas' : 'Marcar todas as competências com lançamento',
+    onclick: () => { S.selecionadas = todasMarcadas ? [] : [...S.comMovimento]; pintar(); }
   }, 'Todos'));
   pills.append(el('button', {
     class: 'pill', type: 'button', title: 'Voltar a um mês só',
@@ -89,6 +92,13 @@ function pintar() {
 
   cabecalho.append(pills);
   S.painel.append(cabecalho);
+
+  // sem competência marcada não há o que calcular: só o convite para marcar
+  if (!S.selecionadas.length) {
+    S.painel.append(el('div', { class: 'card' },
+      el('div', { class: 'vazio', text: 'Marque uma ou mais competências acima para montar a DRE.' })));
+    return;
+  }
 
   /* ---- barra de ações ---- */
   const barra = el('div', { class: 'toolbar' });
@@ -166,7 +176,6 @@ function resumo(rotulo, valor, destaque = false, rodape = '', percentual = '') {
 function alternar(comp) {
   const i = S.selecionadas.indexOf(comp);
   if (i >= 0) {
-    if (S.selecionadas.length === 1) { toast.aviso('Deixe ao menos uma competência selecionada.'); return; }
     S.selecionadas.splice(i, 1);
   } else {
     S.selecionadas.push(comp);

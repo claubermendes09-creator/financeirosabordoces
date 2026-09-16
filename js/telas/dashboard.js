@@ -38,7 +38,8 @@ export async function render(ctx) {
   const raiz = document.createDocumentFragment();
 
   /* ---- cabeçalho ---- */
-  const mesesPilula = [...comps].sort().filter(c => comMovimento.includes(c) || c === comp).slice(-8);
+  // todos os meses com lançamento, em ordem — a barra quebra linha se precisar
+  const mesesPilula = [...comps].sort().filter(c => comMovimento.includes(c) || c === comp);
   raiz.append(el('div', { class: 'page-head' },
     el('h1', { class: 'page-title', text: 'Dashboard' }),
     el('div', { class: 'page-desc', text: `Resultado gerencial de ${competenciaLonga(comp)}` }),
