@@ -40,7 +40,8 @@ export async function render(ctx) {
     selecionadas,
     colapsados: new Set(),
     zeradas: true,
-    mostrarAV: true
+    // no celular a tela é estreita: o %AV começa desligado (a caixa liga)
+    mostrarAV: window.innerWidth > 900
   };
 
   const raiz = document.createDocumentFragment();

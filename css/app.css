@@ -746,3 +746,34 @@ th.th-ord::after { content: ""; display: inline-block; width: 0; height: 0; marg
 th.th-ord::after { border-top: 5px solid currentColor; }
 th.th-ord.ord-asc::after { border-top: 0; border-bottom: 5px solid var(--accent); opacity: 1; }
 th.th-ord.ord-desc::after { border-top: 5px solid var(--accent); opacity: 1; }
+
+/* ---- Celular ---- */
+/* iOS: input de data ignora width sem isto e estoura o card */
+.input[type="date"], .input[type="month"], .input[type="time"] {
+  -webkit-appearance: none; appearance: none; display: block; min-width: 0; max-width: 100%;
+}
+@media (max-width: 900px) {
+  /* 16px evita o zoom automático do iOS ao focar */
+  .input, .select, .textarea { font-size: 16px; }
+  .form-grid { gap: 12px; }
+  .toolbar { gap: 8px; }
+  .toolbar .select { max-width: 100%; }
+  .stat-row { gap: 12px 18px; }
+
+  /* DRE: a coluna congelada não pode engolir a tela */
+  .dre-wrap { max-height: none !important; overflow: auto; }
+  table.dre { font-size: 12px; min-width: 0; }
+  table.dre th, table.dre td { padding: 7px 8px; }
+  table.dre th:first-child, table.dre td:first-child {
+    width: 40vw; max-width: 40vw; min-width: 40vw; white-space: normal; line-height: 1.25;
+  }
+  table.dre tr.l-item > td:first-child { padding-left: 16px; }
+  table.dre tr.l-item.nivel2 > td:first-child { padding-left: 24px; }
+  table.dre td:not(:first-child) { min-width: 96px; }
+  .dre-toggle { font-size: 12px; }
+
+  /* cards da DRE e do dashboard em coluna única já vêm do grid; só apertar o texto */
+  .kpi-value { font-size: 26px; }
+  .page-head .pills { gap: 6px; }
+  .pill { padding: 6px 12px; font-size: 12.5px; }
+}
